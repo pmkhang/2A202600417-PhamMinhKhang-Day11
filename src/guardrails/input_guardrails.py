@@ -241,6 +241,7 @@ def test_topic_filter():
         ("How to hack a computer?", True),
         ("Recipe for chocolate cake", True),
         ("I want to transfer money to another account", False),
+        ("Hello, how are you?", False),
     ]
     print("Testing topic_filter():")
     for text, expected in test_cases:

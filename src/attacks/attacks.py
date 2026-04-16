@@ -187,10 +187,14 @@ async def generate_ai_attacks() -> list:
     print("=" * 60)
     try:
         text = response.text
-        start = text.find("[")
-        end = text.rfind("]") + 1
-        if start >= 0 and end > start:
-            ai_attacks = json.loads(text[start:end])
+        import re
+        match = re.search(r"\[.*\]", text, re.DOTALL)
+        if match:
+            try:
+                ai_attacks = json.loads(match.group(0))
+            except json.JSONDecodeError as e:
+                print(f"JSON Decode Error: {e}")
+                ai_attacks = []
             for i, attack in enumerate(ai_attacks, 1):
                 print(f"\n--- AI Attack #{i} ---")
                 print(f"Type: {attack.get('type', 'N/A')}")
