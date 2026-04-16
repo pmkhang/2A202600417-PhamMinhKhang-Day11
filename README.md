@@ -16,7 +16,7 @@ Day 11 — Guardrails, HITL & Responsible AI: How to make agent applications saf
 ```
 Day-11-Guardrails-HITL-Responsible-AI/
 ├── notebooks/
-│   ├── lab11_guardrails_hitl.ipynb            # Student lab (Colab)
+│   ├── lab11_guardrails_hitl.ipynb            # Student lab notebook
 │   └── lab11_guardrails_hitl_solution.ipynb   # Solution (instructor only)
 ├── src/                                       # Local Python version
 │   ├── main.py                    # Entry point — run all parts or pick one
@@ -41,16 +41,20 @@ Day-11-Guardrails-HITL-Responsible-AI/
 
 ## Setup
 
-### Google Colab (recommended)
+### GitHub Repo (recommended)
 
-1. Upload `notebooks/lab11_guardrails_hitl.ipynb` to Google Colab
-2. Create a Google API Key at [Google AI Studio](https://aistudio.google.com/apikey)
-3. Save the API key in Colab Secrets as `GOOGLE_API_KEY`
-4. Run cells in order
+1. Open this repository: [pmkhang/Day11-2A202600417-PhamMinhKhang-E402](https://github.com/pmkhang/Day11-2A202600417-PhamMinhKhang-E402)
+2. Open `notebooks/lab11_guardrails_hitl.ipynb` from the repo
+3. Create a Google API Key at [Google AI Studio](https://aistudio.google.com/apikey)
+4. Set `GOOGLE_API_KEY` in your local environment before running the notebook or Python modules
 
 ### Local (Notebook)
 
+Clone and run from this repo:
+
 ```bash
+git clone https://github.com/pmkhang/Day11-2A202600417-PhamMinhKhang-E402.git
+cd Day11-2A202600417-PhamMinhKhang-E402
 uv venv
 source .venv/bin/activate
 uv pip install -r requirements.txt
