@@ -89,6 +89,25 @@ def topic_filter(user_input: str) -> bool:
     return False
 
 
+def detect_sensitive_financial_request(user_input: str) -> bool:
+    """Detect operational banking requests we should refuse at input time.
+
+    The lab agent is only safe to use for general banking information. We block:
+    - requests for live/current interest rates, which may be time-sensitive
+    - money movement / transfer intents that look like an execution request
+    """
+    sensitive_patterns = [
+        r"\b(current|latest|live|real[- ]?time)\b.*\b(interest|rate|savings?|deposit)\b",
+        r"\b(interest|rate|savings?|deposit)\b.*\b(current|latest|live|real[- ]?time)\b",
+        r"\b(l[aã]i\s+su[aấ]t)\b.*\b(hi[eệ]n\s+t[aạ]i|m[ớo]i\s+nh[aấ]t)\b",
+        r"\b(hi[eệ]n\s+t[aạ]i|m[ớo]i\s+nh[aấ]t)\b.*\b(l[aã]i\s+su[aấ]t)\b",
+        r"\b(transfer|send|wire|pay|payment|chuy[eể]n\s+ti[eề]n)\b.*\b(\d[\d,\.]*\s*(vnd|usd|eur|k|m|million|billion)?)\b",
+        r"\b(\d[\d,\.]*\s*(vnd|usd|eur|k|m|million|billion)?)\b.*\b(transfer|send|wire|pay|payment|chuy[eể]n\s+ti[eề]n)\b",
+    ]
+
+    return any(re.search(pattern, user_input, re.IGNORECASE) for pattern in sensitive_patterns)
+
+
 # ============================================================
 # TODO 5: Implement InputGuardrailPlugin
 #
@@ -102,6 +121,9 @@ def topic_filter(user_input: str) -> bool:
 
 class InputGuardrailPlugin(base_plugin.BasePlugin):
     """Plugin that blocks bad input before it reaches the LLM."""
+
+    BLOCK_REASON_KEY = "_input_guardrail_block_reason"
+    BLOCK_MESSAGE_KEY = "_input_guardrail_block_message"
 
     def __init__(self):
         super().__init__(name="input_guardrail")
@@ -124,6 +146,28 @@ class InputGuardrailPlugin(base_plugin.BasePlugin):
             parts=[types.Part.from_text(text=message)],
         )
 
+    def _classify_message(self, text: str) -> str | None:
+        """Return the block message for unsafe text, otherwise None."""
+        if detect_injection(text):
+            return (
+                "Your message appears to contain prompt injection patterns. "
+                "Please ask a normal banking question."
+            )
+
+        if topic_filter(text):
+            return (
+                "I can only help with VinBank banking topics such as account, "
+                "transaction, transfer, loan, savings, or credit card."
+            )
+
+        if detect_sensitive_financial_request(text):
+            return (
+                "I cannot assist with live rate requests or execute real-money "
+                "banking actions. Please ask for general banking information instead."
+            )
+
+        return None
+
     async def on_user_message_callback(
         self,
         *,
@@ -138,20 +182,36 @@ class InputGuardrailPlugin(base_plugin.BasePlugin):
         """
         self.total_count += 1
         text = self._extract_text(user_message)
+        block_message = self._classify_message(text)
+        if block_message is None:
+            if invocation_context is not None and getattr(invocation_context, "session", None):
+                invocation_context.session.state.pop(self.BLOCK_REASON_KEY, None)
+                invocation_context.session.state.pop(self.BLOCK_MESSAGE_KEY, None)
+            return None
 
-        if detect_injection(text):
-            self.blocked_count += 1
-            return self._block_response(
-                "Your message appears to contain prompt injection patterns. "
-                "Please ask a normal banking question."
-            )
+        self.blocked_count += 1
 
-        if topic_filter(text):
-            self.blocked_count += 1
-            return self._block_response(
-                "I can only help with VinBank banking topics such as account, "
-                "transaction, transfer, loan, savings, or credit card."
-            )
+        # Real ADK runs should early-exit in before_run_callback.
+        # Direct tests in the notebook call this callback manually, so we still
+        # return a visible blocked response when no invocation context exists.
+        if invocation_context is not None and getattr(invocation_context, "session", None):
+            invocation_context.session.state[self.BLOCK_REASON_KEY] = "blocked"
+            invocation_context.session.state[self.BLOCK_MESSAGE_KEY] = block_message
+            return None
+
+        return self._block_response(block_message)
+
+    async def before_run_callback(
+        self, *, invocation_context: InvocationContext
+    ) -> types.Content | None:
+        """Early-exit the runner when on_user_message_callback marked input unsafe."""
+        if invocation_context is None or getattr(invocation_context, "session", None) is None:
+            return None
+
+        block_message = invocation_context.session.state.pop(self.BLOCK_MESSAGE_KEY, None)
+        invocation_context.session.state.pop(self.BLOCK_REASON_KEY, None)
+        if block_message:
+            return self._block_response(block_message)
 
         return None
 
@@ -189,6 +249,21 @@ def test_topic_filter():
         print(f"  [{status}] '{text[:50]}' -> blocked={result} (expected={expected})")
 
 
+def test_sensitive_financial_request():
+    """Test detection of operational or time-sensitive banking requests."""
+    test_cases = [
+        ("What is the current savings interest rate?", True),
+        ("I want to transfer 1 million VND", True),
+        ("How do bank transfers work?", False),
+        ("Explain how savings accounts calculate interest.", False),
+    ]
+    print("Testing detect_sensitive_financial_request():")
+    for text, expected in test_cases:
+        result = detect_sensitive_financial_request(text)
+        status = "PASS" if result == expected else "FAIL"
+        print(f"  [{status}] '{text[:55]}...' -> sensitive={result} (expected={expected})")
+
+
 async def test_input_plugin():
     """Test InputGuardrailPlugin with sample messages."""
     plugin = InputGuardrailPlugin()
@@ -220,5 +295,6 @@ if __name__ == "__main__":
 
     test_injection_detection()
     test_topic_filter()
+    test_sensitive_financial_request()
     import asyncio
     asyncio.run(test_input_plugin())
