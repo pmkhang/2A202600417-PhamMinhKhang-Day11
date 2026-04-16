@@ -51,32 +51,36 @@ Day-11-Guardrails-HITL-Responsible-AI/
 ### Local (Notebook)
 
 ```bash
-pip install -r requirements.txt
+uv venv
+source .venv/bin/activate
+uv pip install -r requirements.txt
 export GOOGLE_API_KEY="your-api-key-here"
-jupyter notebook notebooks/lab11_guardrails_hitl.ipynb
+uv run jupyter notebook notebooks/lab11_guardrails_hitl.ipynb
 ```
 
 ### Local (Python modules — no Colab needed)
 
 ```bash
 cd src/
-pip install -r ../requirements.txt
+uv venv
+source ../.venv/bin/activate
+uv pip install -r ../requirements.txt
 export GOOGLE_API_KEY="your-api-key-here"
 
 # Run the full lab
-python main.py
+uv run main.py
 
 # Or run specific parts
-python main.py --part 1    # Part 1: Attacks
-python main.py --part 2    # Part 2: Guardrails
-python main.py --part 3    # Part 3: Testing pipeline
-python main.py --part 4    # Part 4: HITL design
+uv run main.py --part 1    # Part 1: Attacks
+uv run main.py --part 2    # Part 2: Guardrails
+uv run main.py --part 3    # Part 3: Testing pipeline
+uv run main.py --part 4    # Part 4: HITL design
 
 # Or test individual modules
-python guardrails/input_guardrails.py
-python guardrails/output_guardrails.py
-python testing/testing.py
-python hitl/hitl.py
+uv run guardrails/input_guardrails.py
+uv run guardrails/output_guardrails.py
+uv run testing/testing.py
+uv run hitl/hitl.py
 ```
 
 ### Tools Used
@@ -128,4 +132,3 @@ python hitl/hitl.py
 - [AI Safety Fundamentals](https://aisafetyfundamentals.com/)
 - [AI Red Teaming Guide](https://github.com/requie/AI-Red-Teaming-Guide)
 - [antoan.ai - AI Safety Vietnam](https://antoan.ai)
-

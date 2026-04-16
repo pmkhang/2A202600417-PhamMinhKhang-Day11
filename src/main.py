@@ -3,11 +3,11 @@ Lab 11 — Main Entry Point
 Run the full lab flow: attack -> defend -> test -> HITL design
 
 Usage:
-    python main.py              # Run all parts
-    python main.py --part 1     # Run only Part 1 (attacks)
-    python main.py --part 2     # Run only Part 2 (guardrails)
-    python main.py --part 3     # Run only Part 3 (testing pipeline)
-    python main.py --part 4     # Run only Part 4 (HITL design)
+    uv run main.py              # Run all parts
+    uv run main.py --part 1     # Run only Part 1 (attacks)
+    uv run main.py --part 2     # Run only Part 2 (guardrails)
+    uv run main.py --part 3     # Run only Part 3 (testing pipeline)
+    uv run main.py --part 4     # Run only Part 4 (HITL design)
 """
 import sys
 import asyncio

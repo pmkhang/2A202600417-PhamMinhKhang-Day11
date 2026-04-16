@@ -2,13 +2,26 @@
 Lab 11 — Configuration & API Key Setup
 """
 import os
+import sys
+
+from core.env import auto_load_env
 
 
 def setup_api_key():
-    """Load Google API key from environment or prompt."""
-    if "GOOGLE_API_KEY" not in os.environ:
-        os.environ["GOOGLE_API_KEY"] = input("Enter Google API Key: ")
-    os.environ["GOOGLE_GENAI_USE_VERTEXAI"] = "0"
+    """Load Google API key from .env/env and only prompt in interactive shells."""
+    auto_load_env()
+
+    api_key = os.getenv("GOOGLE_API_KEY", "").strip()
+    if not api_key:
+        if sys.stdin.isatty():
+            api_key = input("Enter Google API Key: ").strip()
+        else:
+            raise RuntimeError(
+                "Missing GOOGLE_API_KEY. Add it to .env or export it before running the project."
+            )
+
+    os.environ["GOOGLE_API_KEY"] = api_key
+    os.environ.setdefault("GOOGLE_GENAI_USE_VERTEXAI", "0")
     print("API key loaded.")
 
 

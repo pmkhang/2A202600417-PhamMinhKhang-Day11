@@ -1,7 +1,10 @@
 """
 Lab 11 — Helper Utilities
 """
+from core.env import auto_load_env
 from google.genai import types
+
+auto_load_env()
 
 
 async def chat_with_agent(agent, runner, user_message: str, session_id=None):
